@@ -93,7 +93,6 @@ class ErrorHandler
     private $screamedErrors = 0x55; // E_ERROR + E_CORE_ERROR + E_COMPILE_ERROR + E_PARSE
     private $loggedErrors = 0;
     private $configureException;
-    private $debug;
 
     private $isRecursive = 0;
     private $isRoot = false;
@@ -105,6 +104,8 @@ class ErrorHandler
     private static $silencedErrorCache = [];
     private static $silencedErrorCount = 0;
     private static $exitCode = 0;
+
+    protected $debug;
 
     /**
      * Registers the error handler.
