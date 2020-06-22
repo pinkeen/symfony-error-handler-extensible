@@ -59,6 +59,7 @@ class HtmlErrorRenderer implements ErrorRendererInterface
         $this->projectDir = $projectDir;
         $this->outputBuffer = $outputBuffer;
         $this->logger = $logger;
+
     }
 
     /**
@@ -343,12 +344,101 @@ class HtmlErrorRenderer implements ErrorRendererInterface
         return '<path d="'.self::GHOST_ADDONS[date('m-d')].'" fill="#fff" fill-opacity="0.6"></path>';
     }
 
-    protected function include(string $name, array $context = []): string
+    /**
+     * Returns array of resource dirs indexed by owner (class) name.
+     *
+     * The paths are searched in reverse order and first resource found is returned.
+     *
+     * Extend parent class resources by appending to the return value of parent call.
+     *
+     * @return string[]
+     */
+    protected function getResourceDirs(): array
     {
+        return [self::class => __DIR__ . '/../Resources/'];
+    }
+
+    protected function locateResource(string $name, string $belowOwner = null): ?string
+    {
+        foreach (array_reverse($this->getResourceDirs()) as $owner => $dir) {
+            if (null !== $belowOwner) {
+                if ($owner !== $belowOwner) {
+                    continue;
+                }
+
+                $belowOwner = null;
+            }
+
+            $resourcePath = $dir . $name;
+
+            if (is_readable($resourcePath) && is_file($resourcePath)) {
+                return $resourcePath;
+            }
+        }
+
+        return null;
+    }
+
+    protected function locateParentResource(string $name): ?string
+    {
+        if (!$this->getParentClassName()) {
+            return null;
+        }
+
+        return $this->locateResource($name, $this->getParentClassName());
+    }
+
+    protected function includeResource(string $path = null, array $context = []): ?string
+    {
+        if (null === $path) {
+            return null;
+        }
+
         extract($context, EXTR_SKIP);
         ob_start();
-        include __DIR__.'/../Resources/'.$name;
+        include $path;
 
         return trim(ob_get_clean());
+    }
+
+    protected function hasResource(string $name): bool
+    {
+        return null !== $this->locateResource($name);
+    }
+
+    protected function hasParentResource(string $name): bool
+    {
+        return null !== $this->locateParentResource($name);
+    }
+
+    protected function include(string $name, array $context = []): ?string
+    {
+        return $this->includeResource($this->locateResource($name), $context);
+    }
+
+    protected function parentInclude(string $name, array $context = []): ?string
+    {
+        return $this->includeResource($this->locateParentResource($name), $context);
+    }
+
+    private function getParentClassName(): ?string
+    {
+        static $parentClassName = null;
+
+        if (false === $parentClassName) {
+            return null;
+        }
+
+        if (null === $parentClassName) {
+            $class = new \ReflectionClass(static::class);
+
+            if (false === $class->getParentClass()) {
+                return $parentClassName = false;
+            }
+
+            $parentClassName = $class->getParentClass()->getName();
+        }
+
+        return $parentClassName;
     }
 }
