@@ -18,7 +18,7 @@ namespace Symfony\Component\ErrorHandler;
  */
 class Debug
 {
-    public static function enable(): ErrorHandler
+    public static function enable(BufferingLogger $logger = null): ErrorHandler
     {
         error_reporting(-1);
 
@@ -36,6 +36,6 @@ class Debug
 
         DebugClassLoader::enable();
 
-        return ErrorHandler::register(new ErrorHandler(new BufferingLogger(), true));
+        return ErrorHandler::register(new ErrorHandler($logger ?: new BufferingLogger(), true));
     }
 }
