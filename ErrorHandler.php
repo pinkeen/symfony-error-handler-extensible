@@ -20,6 +20,7 @@ use Symfony\Component\ErrorHandler\ErrorEnhancer\ErrorEnhancerInterface;
 use Symfony\Component\ErrorHandler\ErrorEnhancer\UndefinedFunctionErrorEnhancer;
 use Symfony\Component\ErrorHandler\ErrorEnhancer\UndefinedMethodErrorEnhancer;
 use Symfony\Component\ErrorHandler\ErrorRenderer\CliErrorRenderer;
+use Symfony\Component\ErrorHandler\ErrorRenderer\ErrorRendererInterface;
 use Symfony\Component\ErrorHandler\ErrorRenderer\HtmlErrorRenderer;
 use Symfony\Component\ErrorHandler\Exception\SilencedErrorContext;
 
@@ -703,6 +704,20 @@ class ErrorHandler
     }
 
     /**
+     * Creates the appropriate error renderer.
+     *
+     * Returns CliErrorRenderer for cli and phpdbg SAPIs and HtmlErrorRenderer otherwise.
+     *
+     * @param \Throwable $exception
+     * @return ErrorRendererInterface
+     */
+    protected function createErrorRenderer(\Throwable $exception): ErrorRendererInterface
+    {
+        return \in_array(\PHP_SAPI, ['cli', 'phpdbg'], true)
+            ? new CliErrorRenderer() : new HtmlErrorRenderer($this->debug);
+    }
+
+    /**
      * Renders the given exception.
      *
      * As this method is mainly called during boot where nothing is yet available,
@@ -710,7 +725,7 @@ class ErrorHandler
      */
     private function renderException(\Throwable $exception): void
     {
-        $renderer = \in_array(\PHP_SAPI, ['cli', 'phpdbg'], true) ? new CliErrorRenderer() : new HtmlErrorRenderer($this->debug);
+        $renderer = $this->createErrorRenderer($exception);
 
         $exception = $renderer->render($exception);
 
