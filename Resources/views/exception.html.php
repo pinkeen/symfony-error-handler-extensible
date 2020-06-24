@@ -66,12 +66,12 @@
         <div class="tab <?= !$logger->getLogs() ? 'disabled' : ''; ?>">
             <h3 class="tab-title">
                 Logs
-                <?php if ($logger->countErrors()) { ?><span class="badge status-error"><?= $logger->countErrors(); ?></span><?php } ?>
+                <?php if ($errorCount = $logger->count('error')) { ?><span class="badge status-error"><?= $errorCount; ?></span><?php } ?>
             </h3>
 
             <div class="tab-content">
                 <?php if ($logger->getLogs()) { ?>
-                    <?= $this->include('views/logs.html.php', ['logs' => $logger->getLogs()]); ?>
+                    <?= $this->include('views/logs.html.php', ['logs' => $logger->getLogs(true)]); ?>
                 <?php } else { ?>
                     <div class="empty">
                         <p>No log messages</p>

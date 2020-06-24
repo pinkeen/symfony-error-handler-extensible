@@ -12,6 +12,8 @@
 namespace Symfony\Component\ErrorHandler\ErrorRenderer;
 
 use Psr\Log\LoggerInterface;
+use Symfony\Component\ErrorHandler\BufferingLogger;
+use Symfony\Component\ErrorHandler\BufferingLoggerInterface;
 use Symfony\Component\ErrorHandler\Exception\FlattenException;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
@@ -143,12 +145,18 @@ class HtmlErrorRenderer implements ErrorRendererInterface
 
         $exceptionMessage = $this->escape($exception->getMessage());
 
+        $logger = $this->logger instanceof BufferingLoggerInterface
+            ? $this->logger
+            : ($this->logger instanceof DebugLoggerInterface
+                ? BufferingLogger::createFromArray($logger->getLogs())
+                : null);
+
         return $this->include($debugTemplate, [
             'exception' => $exception,
             'exceptionMessage' => $exceptionMessage,
             'statusText' => $statusText,
             'statusCode' => $statusCode,
-            'logger' => $this->logger instanceof DebugLoggerInterface ? $this->logger : null,
+            'logger' => $logger,
             'currentContent' => \is_string($this->outputBuffer) ? $this->outputBuffer : ($this->outputBuffer)(),
         ]);
     }
